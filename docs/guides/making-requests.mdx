@@ -1,0 +1,39 @@
+---
+title: Making Requests
+description: Request format, headers, and pagination conventions for the FCL API.
+sidebar_position: 1
+---
+
+# Making Requests
+
+This page covers the conventions used across all FCL API endpoints.
+
+## Request format
+
+The API accepts JSON request bodies. Set the `Content-Type` header accordingly:
+
+```
+Content-Type: application/json
+```
+
+## Required headers
+
+Every request requires the `Authorization` header with your bearer token. See [Authentication](../getting-started/authentication) for details.
+
+## Pagination
+
+List endpoints return paginated results. Responses include a `next_cursor` field when additional pages are available. Pass it as the `cursor` query parameter on your next request:
+
+```
+GET /v1/resources?cursor=<next_cursor>
+```
+
+When `next_cursor` is absent, you have reached the last page.
+
+## Idempotency
+
+For mutating requests (POST, PUT, PATCH), you may pass an `Idempotency-Key` header with a unique UUID. Repeating the same request with the same key within 24 hours returns the original response without re-executing the operation.
+
+## Timeouts
+
+The API enforces a 30-second request timeout. For long-running operations, the API returns a job ID that you can poll via the relevant status endpoint.

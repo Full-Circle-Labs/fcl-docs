@@ -1,0 +1,35 @@
+---
+title: Rate Limits
+description: Per-endpoint rate limits and backoff guidance for the FCL API.
+sidebar_position: 1
+---
+
+# Rate Limits
+
+Rate limits are applied per API key to protect service availability for all users.
+
+## Default limits
+
+| Endpoint group | Requests per minute |
+|---|---|
+| Read endpoints (`GET`) | 300 |
+| Write endpoints (`POST`, `PUT`, `PATCH`, `DELETE`) | 60 |
+| Batch operations | 10 |
+
+## Rate limit headers
+
+Every response includes the following headers:
+
+| Header | Description |
+|---|---|
+| `X-RateLimit-Limit` | Maximum requests allowed in the current window |
+| `X-RateLimit-Remaining` | Requests remaining in the current window |
+| `X-RateLimit-Reset` | Unix timestamp when the window resets |
+
+## Handling 429 responses
+
+When a `429 Too Many Requests` response is received, wait for the number of seconds indicated in the `Retry-After` header before retrying. See [Error Handling](../guides/error-handling) for general retry guidance.
+
+## Increasing limits
+
+If your use case requires higher limits, contact [contact@fullcirclelabs.bio](mailto:contact@fullcirclelabs.bio) with a description of your workload.

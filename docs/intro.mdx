@@ -1,0 +1,32 @@
+---
+sidebar_position: 1
+title: Introduction
+description: Full Circle Labs documentation hub — guides, references, and API documentation.
+---
+
+# Introduction
+
+Welcome to the Full Circle Labs documentation.
+
+## What's here
+
+- **Guides** — step-by-step documentation for using FCL products and services
+- **API Reference** — interactive API reference generated from the OpenAPI spec
+
+## API Reference
+
+The [API Reference](/docs/api/) is generated from the OpenAPI spec at `openapi/openapi.yaml`. To regenerate it after updating the spec:
+
+```bash
+npm run gen-api-docs
+```
+
+## Documentation versioning
+
+Snapshot the current docs as a released version:
+
+```bash
+npm run docusaurus docs:version 1.0.0
+```
+
+Versioned docs are stored in `versioned_docs/` and selectable via the version dropdown in the navbar.

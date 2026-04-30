@@ -1,0 +1,44 @@
+---
+title: Error Handling
+description: Error response format, status codes, and retry strategies for the FCL API.
+sidebar_position: 2
+---
+
+# Error Handling
+
+All errors from the FCL API follow a consistent JSON structure.
+
+## Error response format
+
+```json
+{
+  "error": {
+    "code": "resource_not_found",
+    "message": "The requested resource does not exist.",
+    "status": 404
+  }
+}
+```
+
+The `code` field is a stable machine-readable string suitable for programmatic handling. The `message` field is human-readable and may change between releases.
+
+## HTTP status codes
+
+| Status | Meaning |
+|---|---|
+| `400` | Bad Request — malformed JSON or missing required field |
+| `401` | Unauthorized — missing or invalid API key |
+| `403` | Forbidden — valid key but insufficient scope |
+| `404` | Not Found — resource does not exist |
+| `409` | Conflict — duplicate resource or state conflict |
+| `422` | Unprocessable — request was well-formed but failed validation |
+| `429` | Too Many Requests — rate limit exceeded |
+| `500` | Internal Server Error — something went wrong on our end |
+
+## Retrying requests
+
+`500` and `503` errors are safe to retry. Use exponential backoff with jitter — for example, wait 1s, then 2s, then 4s before each retry. Do not retry `4xx` errors without first correcting the request.
+
+## Rate limit errors
+
+When you receive a `429`, inspect the `Retry-After` response header for the number of seconds to wait before retrying. See [Rate Limits](../reference/rate-limits) for per-endpoint limits.

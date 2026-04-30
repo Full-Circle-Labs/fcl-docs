@@ -1,0 +1,170 @@
+openapi: 3.0.3
+info:
+  title: FCL API
+  description: Full Circle Labs API Reference
+  version: 1.0.0
+  contact:
+    email: contact@fullcirclelabs.bio
+servers:
+  - url: https://api.v1.fcl.bio/v1
+    description: Production
+  - url: http://localhost:8000/v1
+    description: Development
+tags:
+  - name: System
+    description: System health and metadata
+  - name: App
+    description: Application endpoints
+security:
+  - bearerAuth: []
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      description: Enter your FCL API key as a bearer token.
+  schemas:
+    DropoffPoint:
+      type: object
+      required:
+        - id
+        - name
+        - address
+      properties:
+        id:
+          type: string
+          example: dp_01abc123
+        name:
+          type: string
+          example: Central Collection Hub
+        address:
+          type: string
+          example: 123 Main St, San Francisco, CA 94105
+        latitude:
+          type: number
+          format: double
+          example: 37.7749
+        longitude:
+          type: number
+          format: double
+          example: -122.4194
+        active:
+          type: boolean
+          example: true
+paths:
+  /health:
+    get:
+      summary: Health check
+      description: Returns the health status of the API.
+      operationId: getHealth
+      tags:
+        - System
+      x-codeSamples:
+        - lang: cURL
+          label: cURL
+          source: |
+            curl https://api.v1.fcl.bio/v1/health \
+              -H "Authorization: Bearer YOUR_API_KEY"
+        - lang: JavaScript
+          label: JavaScript
+          source: |
+            const response = await fetch('https://api.v1.fcl.bio/v1/health', {
+              headers: {
+                Authorization: 'Bearer YOUR_API_KEY',
+              },
+            });
+            const data = await response.json();
+        - lang: Python
+          label: Python
+          source: |
+            import requests
+
+            response = requests.get(
+                'https://api.v1.fcl.bio/v1/health',
+                headers={'Authorization': 'Bearer YOUR_API_KEY'},
+            )
+            data = response.json()
+      responses:
+        '200':
+          description: API is healthy
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                  - status
+                  - version
+                properties:
+                  status:
+                    type: string
+                    example: ok
+                  version:
+                    type: string
+                    example: 1.0.0
+        '401':
+          description: Unauthorized — missing or invalid API key
+  /app/dropoff_points:
+    get:
+      summary: List dropoff points
+      description: Returns a list of all active dropoff points.
+      operationId: listDropoffPoints
+      tags:
+        - App
+      parameters:
+        - name: active
+          in: query
+          required: false
+          description: Filter by active status. Omit to return all points.
+          schema:
+            type: boolean
+        - name: cursor
+          in: query
+          required: false
+          description: Pagination cursor from a previous response.
+          schema:
+            type: string
+      x-codeSamples:
+        - lang: cURL
+          label: cURL
+          source: |
+            curl https://api.v1.fcl.bio/v1/app/dropoff_points \
+              -H "Authorization: Bearer YOUR_API_KEY"
+        - lang: JavaScript
+          label: JavaScript
+          source: |
+            const response = await fetch('https://api.v1.fcl.bio/v1/app/dropoff_points', {
+              headers: {
+                Authorization: 'Bearer YOUR_API_KEY',
+              },
+            });
+            const data = await response.json();
+        - lang: Python
+          label: Python
+          source: |
+            import requests
+
+            response = requests.get(
+                'https://api.v1.fcl.bio/v1/app/dropoff_points',
+                headers={'Authorization': 'Bearer YOUR_API_KEY'},
+            )
+            data = response.json()
+      responses:
+        '200':
+          description: A paginated list of dropoff points
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                  - data
+                properties:
+                  data:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/DropoffPoint'
+                  next_cursor:
+                    type: string
+                    nullable: true
+                    example: eyJpZCI6ImRwXzAxYWJjMTIzIn0
+        '401':
+          description: Unauthorized — missing or invalid API key

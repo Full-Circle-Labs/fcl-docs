@@ -1,0 +1,26 @@
+---
+title: Changelog
+description: Release history and notable changes to the FCL API.
+sidebar_position: 2
+---
+
+# Changelog
+
+Notable changes to the FCL API, listed in reverse chronological order.
+
+## Versioning policy
+
+The API version is included in the URL path (e.g., `/v1/`). Breaking changes result in a new major version. Additive changes — new fields, new endpoints, new optional parameters — are made within the current version without a version bump.
+
+## v1.0.0 — 2026-04-30
+
+Initial public release of the FCL API.
+
+- `GET /v1/health` — health check endpoint
+- Bearer token authentication
+- JSON request and response bodies
+- Pagination via cursor
+
+## Deprecation policy
+
+Deprecated endpoints and fields are supported for a minimum of 6 months after the deprecation notice. Notices are published here and communicated via email to registered API users.

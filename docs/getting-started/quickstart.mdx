@@ -1,0 +1,36 @@
+---
+title: Quickstart
+description: Get up and running with the FCL API in minutes.
+sidebar_position: 1
+---
+
+# Quickstart
+
+This guide walks you through making your first request to the FCL API.
+
+## Prerequisites
+
+Before you begin, you will need an FCL account and an active API key. See [Authentication](./authentication) for instructions on generating a key.
+
+## Base URL
+
+All API requests are made to the following base URL:
+
+```
+https://api.v1.fcl.bio/v1
+```
+
+## Your first request
+
+Use the health check endpoint to confirm your setup is working:
+
+```bash
+curl https://api.v1.fcl.bio/v1/health \
+  -H "Authorization: Bearer YOUR_API_KEY"
+```
+
+A successful response returns `{"status": "ok"}`.
+
+## Next steps
+
+Once you have confirmed connectivity, explore the [API Reference](/docs/api) for the full list of available endpoints, or read the [Making Requests](../guides/making-requests) guide for details on request formatting and pagination.
