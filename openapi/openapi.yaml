@@ -1,170 +1,359 @@
-openapi: 3.0.3
+openapi: '3.1.0'
 info:
-  title: FCL API
-  description: Full Circle Labs API Reference
-  version: 1.0.0
-  contact:
-    email: contact@fullcirclelabs.bio
+  title: FCL main API
+  description: Stateless API service for FCL app
+  version: '1.0'
 servers:
   - url: https://api.v1.fcl.bio/v1
-    description: Production
-  - url: http://localhost:8000/v1
-    description: Development
-tags:
-  - name: System
-    description: System health and metadata
-  - name: App
-    description: Application endpoints
-security:
-  - bearerAuth: []
+
+paths:
+  /admin/orders/{order_number}:
+    get:
+      tags:
+        - admin
+      summary: Get order details
+      security:
+        - BearerAuth: []
+      operationId: getOrder
+      description: >
+        Fetches full details of an order including samples, sequencing runs,
+        sample statuses, account information and private details.
+      parameters:
+        - $ref: "#/components/parameters/order_number"
+      responses:
+        "200":
+          description: A JSON object containing the full order details.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/OrderResponse"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/UnauthorizedError"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "500":
+          $ref: "#/components/responses/InternalServerError"
+
 components:
-  securitySchemes:
-    bearerAuth:
-      type: http
-      scheme: bearer
-      description: Enter your FCL API key as a bearer token.
   schemas:
-    DropoffPoint:
+    OrderResponse:
+      type: object
+      required:
+        - order
+        - account
+        - private_details
+      properties:
+        order:
+          $ref: "#/components/schemas/Order"
+        account:
+          $ref: "#/components/schemas/Account"
+        private_details:
+          $ref: "#/components/schemas/PrivateDetails"
+
+    Order:
+      type: object
+      required:
+        - number
+        - placed_time
+        - product_id
+        - product_quantity
+        - subtotal_gross_gbp_p
+        - subtotal_net_gbp_p
+        - total_gross_gbp_p
+        - total_net_gbp_p
+        - vat_rate
+        - fulfillment_status
+        - payment_status
+        - payment_method
+        - is_eligible_for_free_shipping
+        - dropoff_point_name
+        - results_download_url
+        - results_preview_url
+        - samples
+        - seq_runs
+        - sample_status
+      properties:
+        number:
+          type: integer
+          description: The unique identifier for the order
+          examples: [8722]
+        placed_time:
+          type: string
+          format: date-time
+          description: The time the order was placed
+          examples: ["2024-10-03T21:23:10.944155+00:00"]
+        arrived_time:
+          type: ['null', 'string']
+          format: date-time
+          description: The time the order arrived, if applicable
+        product_id:
+          type: string
+          description: The unique identifier for the product
+          examples: ["WJ8X78"]
+        product_quantity:
+          type: integer
+          description: The number of samples in the order
+          examples: [4]
+        subtotal_gross_gbp_p:
+          type: integer
+          description: The gross subtotal in GBP pence (before tax and shipping)
+          examples: [4800]
+        subtotal_net_gbp_p:
+          type: integer
+          description: The net subtotal in GBP pence (before tax and shipping)
+          examples: [4000]
+        total_gross_gbp_p:
+          type: integer
+          description: The gross total in GBP pence (after tax and shipping)
+          examples: [4800]
+        total_net_gbp_p:
+          type: integer
+          description: The net total in GBP pence (after tax and shipping)
+          examples: [4000]
+        vat_rate:
+          type: number
+          description: The VAT rate applied to the order
+          examples: [0.2]
+        fulfillment_status:
+          type: string
+          description: The fulfillment status of the order
+          examples: ["unfulfilled"]
+        payment_status:
+          type: string
+          description: The payment status of the order
+          examples: ["delayed"]
+        payment_method:
+          type: string
+          description: The payment method used for the order
+          examples: ["invoice_later"]
+        purchase_order:
+          type: string
+          description: The purchase order reference
+          examples: ["freesamples"]
+        shipping_label:
+          type: ['null', 'string']
+          description: The shipping label for the order, if applicable
+        bag_code:
+          type: ['null', 'string']
+          description: The bag code for the order, if applicable
+        dropoff_point_name:
+          type: string
+          description: The name of the dropoff point for the order
+          examples: ["Royal Mail"]
+        fulfilled_time:
+          type: ['null', 'string']
+          format: date-time
+          description: The time the order was fulfilled, if applicable
+        canceled_time:
+          type: ['null', 'string']
+          format: date-time
+          description: The time the order was canceled, if applicable
+        results_download_url:
+          type: string
+          format: uri
+          description: Pre-authenticated URL to download all results for the order
+          examples: ["https://app.fcl.bio/v0/reports/8722/download?key=<API_KEY>"]
+        results_preview_url:
+          type: string
+          format: uri
+          description: Pre-authenticated URL to view the html report for the order
+          examples: ["https://app.fcl.bio/?key=<API_KEY>#/orders/8722"]
+        samples:
+          type: array
+          items:
+            $ref: "#/components/schemas/OrderSample"
+        seq_runs:
+          type: array
+          items:
+            $ref: "#/components/schemas/SeqRun"
+        sample_status:
+          $ref: "#/components/schemas/SampleStatus"
+
+    OrderSample:
+      type: object
+      required:
+        - number
+        - uuid
+        - name
+        - last_status
+        - last_completed_run_id
+        - fasta_download_url
+      properties:
+        number:
+          type: integer
+          description: The sample number within the order
+          examples: [1]
+        uuid:
+          type: string
+          format: uuid
+          description: The unique identifier for the sample
+          examples: ["e61055dd-158e-4586-9f01-4b5d43f08877"]
+        name:
+          type: string
+          description: The name of the sample
+          examples: ["Control1"]
+        expected_length:
+          type: ['null', 'integer']
+          description: The expected length of the sequence, if known
+        last_status:
+          type: string
+          description: The last status of the sample
+          examples: ["c"]
+        last_completed_run_id:
+          type: integer
+          description: The ID of the last completed sequencing run
+          examples: [609]
+        fasta_download_url:
+          type: string
+          format: uri
+          description: Pre-authenticated URL to download the FASTA sequence for this sample
+          examples: ["https://app.fcl.bio/v0/reports/8722/samples/Control1/fasta?key=<API_KEY>"]
+
+    SeqRun:
       type: object
       required:
         - id
-        - name
-        - address
+        - created_time
+        - locked_time
+        - completed_time
+      properties:
+        id:
+          type: integer
+          description: The unique identifier for the sequencing run
+          examples: [609]
+        created_time:
+          type: string
+          format: date-time
+          description: The time the sequencing run was created
+          examples: ["2026-04-17T16:05:44.130432+00:00"]
+        locked_time:
+          type: string
+          format: date-time
+          description: The time the sequencing run was locked
+          examples: ["2026-04-17T18:20:07.889355+00:00"]
+        completed_time:
+          type: string
+          format: date-time
+          description: The time the sequencing run was completed
+          examples: ["2026-04-17T21:44:54.768523+00:00"]
+
+    SampleStatus:
+      type: object
+      description: >
+        Nested map of run ID -> sample number -> status details.
+        Keys are sequencing run IDs, values are maps of sample numbers to their status.
+      additionalProperties:
+        type: object
+        additionalProperties:
+          $ref: "#/components/schemas/SampleStatusDetail"
+      examples:
+        - "609":
+            "1":
+              status: "c"
+              qc_note: "correct control"
+              completed_time: "2026-04-17T21:44:54.768523+00:00"
+            "2":
+              status: "c"
+              qc_note: "correct control"
+              completed_time: "2026-04-17T21:44:54.768523+00:00"
+
+    SampleStatusDetail:
+      type: object
+      required:
+        - status
+        - completed_time
+      properties:
+        status:
+          type: string
+          description: The status code of the sample
+          examples: ["c"]
+        qc_note:
+          type: string
+          description: Quality control note for the sample
+          examples: ["correct control"]
+        completed_time:
+          type: string
+          format: date-time
+          description: The time the sample status was completed
+          examples: ["2026-04-17T21:44:54.768523+00:00"]
+
+    Account:
+      type: object
+      required:
+        - id
+        - email
+        - saleor_id
+        - first_name
+        - last_name
+        - is_staff
+        - virtual_card_id
       properties:
         id:
           type: string
-          example: dp_01abc123
-        name:
+          description: The unique identifier for the account
+          examples: ["5PF2JV"]
+        email:
           type: string
-          example: Central Collection Hub
-        address:
+          format: email
+          description: The email address of the account
+          examples: ["michael+demo@fullcirclelabs.bio"]
+        saleor_id:
           type: string
-          example: 123 Main St, San Francisco, CA 94105
-        latitude:
-          type: number
-          format: double
-          example: 37.7749
-        longitude:
-          type: number
-          format: double
-          example: -122.4194
-        active:
+          description: The Saleor platform identifier for the account
+          examples: ["VXNlcjoyMDg0NTEyNzkx"]
+        first_name:
+          type: string
+          examples: ["Michael"]
+        last_name:
+          type: string
+          examples: ["Crone"]
+        is_staff:
           type: boolean
-          example: true
-paths:
-  /health:
-    get:
-      summary: Health check
-      description: Returns the health status of the API.
-      operationId: getHealth
-      tags:
-        - System
-      x-codeSamples:
-        - lang: cURL
-          label: cURL
-          source: |
-            curl https://api.v1.fcl.bio/v1/health \
-              -H "Authorization: Bearer YOUR_API_KEY"
-        - lang: JavaScript
-          label: JavaScript
-          source: |
-            const response = await fetch('https://api.v1.fcl.bio/v1/health', {
-              headers: {
-                Authorization: 'Bearer YOUR_API_KEY',
-              },
-            });
-            const data = await response.json();
-        - lang: Python
-          label: Python
-          source: |
-            import requests
+          description: Whether the account has staff privileges
+          examples: [false]
+        virtual_card_id:
+          type: string
+          description: The virtual card identifier for the account
+          examples: ["WX8CX4"]
+        vat_number:
+          type: ['null', 'string']
+          description: The VAT number of the account, if applicable
 
-            response = requests.get(
-                'https://api.v1.fcl.bio/v1/health',
-                headers={'Authorization': 'Bearer YOUR_API_KEY'},
-            )
-            data = response.json()
-      responses:
-        '200':
-          description: API is healthy
-          content:
-            application/json:
-              schema:
-                type: object
-                required:
-                  - status
-                  - version
-                properties:
-                  status:
-                    type: string
-                    example: ok
-                  version:
-                    type: string
-                    example: 1.0.0
-        '401':
-          description: Unauthorized — missing or invalid API key
-  /app/dropoff_points:
-    get:
-      summary: List dropoff points
-      description: Returns a list of all active dropoff points.
-      operationId: listDropoffPoints
-      tags:
-        - App
-      parameters:
-        - name: active
-          in: query
-          required: false
-          description: Filter by active status. Omit to return all points.
-          schema:
-            type: boolean
-        - name: cursor
-          in: query
-          required: false
-          description: Pagination cursor from a previous response.
+    PrivateDetails:
+      type: object
+      properties:
+        admin_notes:
+          type: string
+          description: Internal admin notes for the order
+          examples: [""]
+
+  parameters:
+    order_number:
+      name: order_number
+      in: path
+      description: The unique identifier for the order
+      required: true
+      schema:
+        type: integer
+      example: 8722
+
+  securitySchemes:
+    BearerAuth:
+      type: http
+      scheme: bearer
+
+  responses:
+    BadRequest:
+      description: Bad Request - The request was invalid or cannot be served.
+    NotFound:
+      description: Not Found - The requested resource could not be found.
+    InternalServerError:
+      description: Internal Server Error - An error occurred on the server.
+    UnauthorizedError:
+      description: API key is missing or invalid
+      headers:
+        WWW_Authenticate:
           schema:
             type: string
-      x-codeSamples:
-        - lang: cURL
-          label: cURL
-          source: |
-            curl https://api.v1.fcl.bio/v1/app/dropoff_points \
-              -H "Authorization: Bearer YOUR_API_KEY"
-        - lang: JavaScript
-          label: JavaScript
-          source: |
-            const response = await fetch('https://api.v1.fcl.bio/v1/app/dropoff_points', {
-              headers: {
-                Authorization: 'Bearer YOUR_API_KEY',
-              },
-            });
-            const data = await response.json();
-        - lang: Python
-          label: Python
-          source: |
-            import requests
-
-            response = requests.get(
-                'https://api.v1.fcl.bio/v1/app/dropoff_points',
-                headers={'Authorization': 'Bearer YOUR_API_KEY'},
-            )
-            data = response.json()
-      responses:
-        '200':
-          description: A paginated list of dropoff points
-          content:
-            application/json:
-              schema:
-                type: object
-                required:
-                  - data
-                properties:
-                  data:
-                    type: array
-                    items:
-                      $ref: '#/components/schemas/DropoffPoint'
-                  next_cursor:
-                    type: string
-                    nullable: true
-                    example: eyJpZCI6ImRwXzAxYWJjMTIzIn0
-        '401':
-          description: Unauthorized — missing or invalid API key
