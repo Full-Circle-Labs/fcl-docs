@@ -1,0 +1,1054 @@
+openapi: '3.1.0'
+info:
+  title: FCL API
+  description: >
+    Public API for programmatic access to FCL sequencing services.
+    Orders can only be placed using Virtual Cards loaded through the website.
+    Supported products: Full-Length Plasmid Sequencing, PCR Amplicon Sequencing, PCR Library Sequencing, Short Read 50k.
+
+  version: '1.0'
+servers:
+  - url: https://api.fcl.bio/v1
+
+paths:
+  # ------------------------------------------------------------------
+  # Products
+  # ------------------------------------------------------------------
+  /products:
+    get:
+      tags:
+        - products
+      summary: List products
+      operationId: listProducts
+      security:
+        - BearerAuth: []
+      description: >
+        Returns all available sequencing products and their standard prices.
+        Prices are in GBP pence. Any account-specific pricing will be reflected in the cart. 
+      responses:
+        "200":
+          description: Paginated list of products.
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [items]
+                properties:
+                  items:
+                    type: array
+                    items:
+                      $ref: "#/components/schemas/Product"
+                  next:
+                    type: ['null', 'string']
+                    description: Pass as `cursor` in the next request to get the next page. `null` when there are no more results.
+              example:
+                items:
+                  - id: "2868FX"
+                    name: "Full-Length Plasmid Sequencing"
+                    code: "FLPS001"
+                    description: "Whole plasmid sequencing for all plasmid sizes up to ~30 kb."
+                    price_gbp_p: 1200
+                next: null
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "409":
+          $ref: "#/components/responses/AppError"
+
+  /products/{product_id}:
+    get:
+      tags:
+        - products
+      summary: Get product
+      operationId: getProduct
+      security:
+        - BearerAuth: []
+      description: Returns a single product by its ID.
+      parameters:
+        - $ref: "#/components/parameters/product_id"
+      responses:
+        "200":
+          description: Product details.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Product"
+              example:
+                id: "2868FX"
+                name: "Full-Length Plasmid Sequencing"
+                code: "FLPS001"
+                description: "Whole plasmid sequencing for all plasmid sizes up to ~30 kb."
+                price_gbp_p: 1200
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "409":
+          $ref: "#/components/responses/AppError"
+
+  # ------------------------------------------------------------------
+  # Drop-off points
+  # ------------------------------------------------------------------
+  /dropoff_points:
+    get:
+      tags:
+        - drop-off points
+      summary: List drop-off points
+      operationId: listDropoffPoints
+      security:
+        - BearerAuth: []
+      description: >
+        Returns all drop-off and collection points. Only `enabled: true` points
+        can be selected when placing an order. Pass `null` for `dropoff_point_id`
+        to use standard postal delivery.
+      responses:
+        "200":
+          description: Paginated list of drop-off points.
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [items]
+                properties:
+                  items:
+                    type: array
+                    items:
+                      $ref: "#/components/schemas/DropoffPoint"
+                  next:
+                    type: ['null', 'string']
+                    description: Pass as `cursor` in the next request to get the next page. `null` when there are no more results.
+              example:
+                items:
+                  - id: "P7QQRH"
+                    name: "Imperial Internal Mail"
+                    enabled: true
+                    reduced_emissions: false
+                  - id: "RV4CHF"
+                    name: "Crick Institute"
+                    enabled: true
+                    reduced_emissions: true
+                next: null
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "409":
+          $ref: "#/components/responses/AppError"
+
+  # ------------------------------------------------------------------
+  # Virtual cards
+  # ------------------------------------------------------------------
+  /virtual_cards:
+    get:
+      tags:
+        - virtual cards
+      summary: List virtual cards
+      operationId: listVirtualCards
+      security:
+        - BearerAuth: []
+      description: >
+        Returns all virtual cards accessible to the authenticated account —
+        both owned cards and cards shared with the account.
+
+        Use the `id` of the card you want to charge when calling `POST /orders`.
+      responses:
+        "200":
+          description: Paginated list of virtual cards.
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [items]
+                properties:
+                  items:
+                    type: array
+                    items:
+                      $ref: "#/components/schemas/VirtualCard"
+                  next:
+                    type: ['null', 'string']
+                    description: Pass as `cursor` in the next request to get the next page. `null` when there are no more results.
+              example:
+                items:
+                  - id: "CQ8CPF"
+                    owner_id: "ABCD12"
+                    owner_email: "lab@example.com"
+                    label: "Lab account"
+                    created_time: "2025-01-15T09:00:00Z"
+                    saleor_id: null
+                    saleor_code: null
+                    balance_gbp_p: 24000
+                next: null
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "409":
+          $ref: "#/components/responses/AppError"
+
+  # ------------------------------------------------------------------
+  # Cart
+  # ------------------------------------------------------------------
+  /cart:
+    get:
+      tags:
+        - cart
+      summary: Get cart
+      operationId: getCart
+      security:
+        - BearerAuth: []
+      description: >
+        Returns the current cart for the authenticated account. Prices are in **GBP pence** (e.g. 1200 = £12.00).
+        Returns `404` if no cart exists.
+      responses:
+        "200":
+          description: Current cart.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Cart"
+              examples:
+                with_cart:
+                  summary: Cart with samples
+                  value:
+                    id: "CART12"
+                    created_time: "2026-01-15T10:00:00Z"
+                    product_id: "2868FX"
+                    product_quantity: 3
+                    product_unit_price_gbp_p: 1200
+                    subtotal_gross_gbp_p: 3600
+                    subtotal_net_gbp_p: 3000
+                    total_gross_gbp_p: 3600
+                    total_net_gbp_p: 3000
+                    vat_rate: 0.2
+                    items:
+                      samples:
+                        - name: "Plasmid A"
+                          length: 4500
+                        - name: "Plasmid B"
+                        - name: "Plasmid C"
+                          length: 3200
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "409":
+          $ref: "#/components/responses/AppError"
+
+    post:
+      tags:
+        - cart
+      summary: Create cart
+      operationId: createCart
+      security:
+        - BearerAuth: []
+      description: >
+        Creates or replaces the cart for the authenticated account.
+        Only one cart can exist per account at a time — each call overwrites any
+        existing cart.
+
+        The `items` object must contain a `samples` array with one entry per
+        sample. The number of samples must equal `product_quantity`. Each sample requires a
+        `name`; `length` (expected sequence length in bp) is optional but
+        improves QC.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CreateCartRequest"
+            example:
+              product_code: "FLPS001"
+              product_quantity: 3
+              items:
+                samples:
+                  - name: "Plasmid A"
+                    length: 4500
+                  - name: "Plasmid B"
+                  - name: "Plasmid C"
+                    length: 3200
+      responses:
+        "200":
+          description: Updated cart.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Cart"
+              example:
+                id: "CART12"
+                signature: "abc123def456"
+                created_time: "2026-01-15T10:00:00Z"
+                product_id: "2868FX"
+                product_quantity: 3
+                product_unit_price_gbp_p: 1200
+                subtotal_gross_gbp_p: 3600
+                subtotal_net_gbp_p: 3000
+                total_gross_gbp_p: 3600
+                total_net_gbp_p: 3000
+                vat_rate: 0.2
+                items:
+                  samples:
+                    - name: "Plasmid A"
+                      length: 4500
+                    - name: "Plasmid B"
+                    - name: "Plasmid C"
+                      length: 3200
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "409":
+          $ref: "#/components/responses/AppError"
+
+    delete:
+      tags:
+        - cart
+      summary: Delete cart
+      operationId: deleteCart
+      security:
+        - BearerAuth: []
+      description: Deletes the current cart for the authenticated account.
+      responses:
+        "200":
+          description: Cart deleted.
+          content:
+            application/json:
+              schema:
+                type: object
+              example: {}
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "409":
+          $ref: "#/components/responses/AppError"
+
+  # ------------------------------------------------------------------
+  # Orders
+  # ------------------------------------------------------------------
+  /orders:
+    get:
+      tags:
+        - orders
+      summary: List orders
+      operationId: listOrders
+      security:
+        - BearerAuth: []
+      description: >
+        Returns orders for the authenticated account, latest first.
+        Includes both owned orders and orders paid via a shared virtual card.
+
+        Supports cursor-based pagination via the `cursor` parameter. Filter by `fulfillment_status` or
+        `payment_virtual_card` to narrow results.
+      parameters:
+        - name: cursor
+          in: query
+          description: Cursor for the next page, taken from the `next` field of the previous response. Omit for the first page.
+          schema:
+            type: string
+          example: "ABC123"
+        - name: fulfillment_status
+          in: query
+          description: >
+            Comma-separated list of fulfillment statuses to include.
+            Defaults to all statuses.
+          schema:
+            type: string
+          example: "unfulfilled,partially_fulfilled,fulfilled"
+        - name: payment_virtual_card
+          in: query
+          description: >
+            Filter to orders paid with a specific virtual card ID.
+            Useful for virtual card owners monitoring usage across shared accounts.
+          schema:
+            type: string
+          example: "CQ8CPF"
+        - name: number
+          in: query
+          description: Filter by order number (partial string match).
+          schema:
+            type: string
+          example: "1042"
+      responses:
+        "200":
+          description: Paginated list of orders.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/OrderList"
+              example:
+                items:
+                  - number: 1042
+                    placed_time: "2026-01-15T10:05:00Z"
+                    product_id: "2868FX"
+                    product_quantity: 3
+                    subtotal_gross_gbp_p: 3600
+                    subtotal_net_gbp_p: 3000
+                    total_gross_gbp_p: 3600
+                    total_net_gbp_p: 3000
+                    vat_rate: 0.2
+                    fulfillment_status: "unfulfilled"
+                    payment_status: "paid"
+                    arrived_time: null
+                    fulfilled_time: null
+                    canceled_time: null
+                next: null
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "409":
+          $ref: "#/components/responses/AppError"
+
+    post:
+      tags:
+        - orders
+      summary: Place order
+      operationId: placeOrder
+      security:
+        - BearerAuth: []
+      description: >
+        Places a sequencing order using the current cart.
+
+        Via API key, only `virtual_card` payment is accepted. The specified
+        card must be owned by or shared with the authenticated account and
+        have sufficient balance.
+
+        **Virtual Card Credit (VC001) cannot be ordered via the API.** Topping
+        up a virtual card requires a credit card payment, which is not supported
+        by API keys. Attempting to do so returns a 409 with
+        `error.code: "invalid_virtual_card_payment"`. Top up your virtual card
+        through the FCL website instead, see [Creating a Virtual Card](https://docs.fullcirclelabs.bio/docs/guides/documentation/creating-virtual-card#top-up-a-virtual-card).
+
+        The cart is consumed (deleted) on success.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/PlaceOrderRequest"
+            example:
+              cart_id: "CART12"
+              payment_method: "virtual_card"
+              payment_virtual_card_id: "CQ8CPF"
+              dropoff_point_id: null
+              bag_code: null
+      responses:
+        "200":
+          description: Order placed successfully.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Order"
+              example:
+                number: 1042
+                placed_time: "2026-01-15T10:05:00Z"
+                product_id: "2868FX"
+                product_quantity: 3
+                fulfillment_status: "unfulfilled"
+                payment_status: "paid"
+                results_download_url: null
+                samples:
+                  - number: 1
+                    uuid: "a1b2c3d4-e5f6-7890-abcd-ef1234567890"
+                    name: "Plasmid A"
+                    expected_length: 4500
+                  - number: 2
+                    uuid: "b2c3d4e5-f6a7-8901-bcde-f12345678901"
+                    name: "Plasmid B"
+                    expected_length: null
+                  - number: 3
+                    uuid: "c3d4e5f6-a7b8-9012-cdef-012345678902"
+                    name: "Plasmid C"
+                    expected_length: 3200
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "409":
+          $ref: "#/components/responses/AppError"
+
+  /orders/{order_number}:
+    get:
+      tags:
+        - orders
+      summary: Get order
+      operationId: getOrder
+      security:
+        - BearerAuth: []
+      description: >
+        Returns the status and results of a specific order.
+        The order must belong to the authenticated account, or have been paid
+        via a virtual card owned by the account.
+
+        `results_download_url` is populated once `fulfillment_status` reaches
+        `fulfilled` or `partially_fulfilled`.
+      parameters:
+        - $ref: "#/components/parameters/order_number"
+      responses:
+        "200":
+          description: Order details.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Order"
+              examples:
+                unfulfilled:
+                  summary: Order awaiting sequencing
+                  value:
+                    number: 1042
+                    placed_time: "2026-01-15T10:05:00Z"
+                    product_id: "2868FX"
+                    product_quantity: 1
+                    fulfillment_status: "unfulfilled"
+                    payment_status: "paid"
+                    results_download_url: null
+                    samples:
+                      - number: 1
+                        uuid: "a1b2c3d4-e5f6-7890-abcd-ef1234567890"
+                        name: "Plasmid A"
+                        expected_length: 4500
+                fulfilled:
+                  summary: Order with results available
+                  value:
+                    number: 1042
+                    placed_time: "2026-01-15T10:05:00Z"
+                    product_id: "2868FX"
+                    product_quantity: 1
+                    fulfillment_status: "fulfilled"
+                    payment_status: "paid"
+                    results_download_url: "https://app.fcl.bio/v0/reports/1042/download?key=<token>"
+                    samples:
+                      - number: 1
+                        uuid: "a1b2c3d4-e5f6-7890-abcd-ef1234567890"
+                        name: "Plasmid A"
+                        expected_length: 4500
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "409":
+          $ref: "#/components/responses/AppError"
+
+  /orders/{order_number}/fasta:
+    get:
+      tags:
+        - orders
+      summary: Get FASTA data
+      operationId: getOrderFasta
+      security:
+        - BearerAuth: []
+      description: >
+        Returns the assembled sequence for each sample in the order.
+        Only available once `fulfillment_status` is `partially_fulfilled` or `fulfilled`.
+      parameters:
+        - $ref: "#/components/parameters/order_number"
+      responses:
+        "200":
+          description: Assembled sequences for the order.
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/SampleData"
+              example:
+                - sample_name: "Sample 1"
+                  length: 8415
+                  sequence: "TAAACAGTAATACAA...CTTACA"
+                - sample_name: "Sample 2"
+                  length: 8414
+                  sequence: "ATGAAACTGATTTTT...TTGCTTG"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "409":
+          $ref: "#/components/responses/AppError"
+
+components:
+  schemas:
+    # ------------------------------------------------------------------
+    # Product
+    # ------------------------------------------------------------------
+    Product:
+      type: object
+      required:
+        - id
+        - name
+        - code
+        - price_gbp_p
+      properties:
+        id:
+          type: string
+          description: Unique product identifier. Pass as `product_id` when fetching a single product.
+          examples: ["2868FX"]
+        name:
+          type: string
+          description: Human-readable product name.
+          examples: ["Full-Length Plasmid Sequencing"]
+        code:
+          type: string
+          description: Short product code. Pass as `product_code` when adding to cart.
+          examples: ["FLPS001"]
+        description:
+          type: ['null', 'string']
+          description: Long-form product description.
+        price_gbp_p:
+          type: integer
+          description: >
+            Effective unit price in GBP pence (e.g. 1200 = £12.00).
+            Reflects any account-specific custom pricing.
+          examples: [1200]
+
+    # ------------------------------------------------------------------
+    # Drop-off point
+    # ------------------------------------------------------------------
+    DropoffPoint:
+      type: object
+      required:
+        - id
+        - name
+        - enabled
+        - reduced_emissions
+      properties:
+        id:
+          type: string
+          description: Unique drop-off point identifier. Pass as `dropoff_point_id` when placing an order.
+          examples: ["X8WCJJ"]
+        name:
+          type: string
+          description: Human-readable name of the collection location or shipping method.
+          examples: ["Imperial Internal Mail"]
+        enabled:
+          type: boolean
+          description: Whether this point is currently accepting samples.
+        reduced_emissions:
+          type: boolean
+          description: Whether this drop-off method qualifies for reduced-emissions fulfilment.
+
+    # ------------------------------------------------------------------
+    # Virtual card
+    # ------------------------------------------------------------------
+    VirtualCard:
+      type: object
+      required:
+        - id
+        - owner_id
+        - owner_email
+        - balance_gbp_p
+        - created_time
+      properties:
+        id:
+          type: string
+          description: Unique virtual card identifier. Pass as `payment_virtual_card_id` when placing an order.
+          examples: ["CQ8CPF"]
+        owner_id:
+          type: string
+          description: ID of the account that owns this card.
+          examples: ["ABCD12"]
+        owner_email:
+          type: string
+          format: email
+          description: Email of the account that owns this card.
+          examples: ["lab@example.com"]
+        label:
+          type: ['null', 'string']
+          description: Optional human-readable label for the card.
+          examples: ["Lab account"]
+        created_time:
+          type: string
+          format: date-time
+          description: Time the card was created.
+          examples: ["2025-01-15T09:00:00Z"]
+        saleor_id:
+          type: ['null', 'string']
+          description: Legacy system identifier. May be null for cards not migrated from the previous platform.
+        saleor_code:
+          type: ['null', 'string']
+          description: Legacy system code. May be null for cards not migrated from the previous platform.
+        balance_gbp_p:
+          type: integer
+          description: Current card balance in GBP pence.
+          examples: [24000]
+
+    # ------------------------------------------------------------------
+    # Cart
+    # ------------------------------------------------------------------
+    Cart:
+      type: object
+      required:
+        - id
+        - created_time
+        - product_id
+        - product_quantity
+        - product_unit_price_gbp_p
+        - subtotal_gross_gbp_p
+        - subtotal_net_gbp_p
+        - total_gross_gbp_p
+        - total_net_gbp_p
+        - vat_rate
+        - items
+      properties:
+        id:
+          type: string
+          description: Unique cart identifier. Pass as `cart_id` when placing an order.
+          examples: ["CART12"]
+        created_time:
+          type: string
+          format: date-time
+          description: Time the cart was created or last updated.
+          examples: ["2026-01-15T10:00:00Z"]
+        product_id:
+          type: string
+          description: ID of the product in the cart.
+          examples: ["2868FX"]
+        product_quantity:
+          type: integer
+          description: Number of samples.
+          examples: [3]
+        product_unit_price_gbp_p:
+          type: integer
+          description: Unit price per sample in GBP pence.
+          examples: [1200]
+        subtotal_gross_gbp_p:
+          type: integer
+          description: Subtotal before any discounts, in GBP pence.
+          examples: [3600]
+        subtotal_net_gbp_p:
+          type: integer
+          description: Subtotal excluding VAT, in GBP pence.
+          examples: [3000]
+        total_gross_gbp_p:
+          type: integer
+          description: Total amount to be charged in GBP pence.
+          examples: [3600]
+        total_net_gbp_p:
+          type: integer
+          description: Total excluding VAT, in GBP pence.
+          examples: [3000]
+        vat_rate:
+          type: number
+          description: VAT rate applied (e.g. 0.2 = 20%).
+          examples: [0.2]
+        items:
+          type: ['null', 'object']
+          description: >
+            Freeform JSON payload attached to the cart. For sequencing products
+            this must contain a `samples` array — one entry per sample with a
+            required `name` and optional `length` (expected sequence length in bp).
+          examples:
+            - samples:
+                - name: "Plasmid A"
+                  length: 4500
+                - name: "Plasmid B"
+
+    CreateCartRequest:
+      type: object
+      required:
+        - product_code
+        - product_quantity
+        - items
+      properties:
+        product_code:
+          type: string
+          description: Product code from `GET /products` (the `code` field, not `id`).
+          examples: ["FLPS001"]
+        product_quantity:
+          type: integer
+          description: Number of samples. Must equal the length of `items.samples`.
+          examples: [3]
+        items:
+          type: ['null', 'object']
+          description: >
+            For sequencing products: an object with a `samples` array.
+            Each sample requires a `name`; `length` (expected sequence length in bp) is optional.
+          examples:
+            - samples:
+                - name: "Plasmid A"
+                  length: 4500
+                - name: "Plasmid B"
+                - name: "Plasmid C"
+                  length: 3200
+
+    # ------------------------------------------------------------------
+    # Orders
+    # ------------------------------------------------------------------
+    PlaceOrderRequest:
+      type: object
+      required:
+        - cart_id
+        - payment_method
+        - payment_virtual_card_id
+      properties:
+        cart_id:
+          type: string
+          description: ID of the current cart, returned by `POST /cart`.
+          examples: ["CART12"]
+        payment_method:
+          type: string
+          enum: ["virtual_card"]
+          description: Payment method. Only `virtual_card` is accepted via API key.
+        payment_virtual_card_id:
+          type: string
+          description: >
+            ID of the virtual card to charge. Must be owned by or shared with the
+            authenticated account and have sufficient balance.
+          examples: ["CQ8CPF"]
+        dropoff_point_id:
+          type: ['null', 'string']
+          description: >
+            ID of the collection point from `GET /dropoff_points`.
+            Pass `null` for standard postal delivery.
+          examples: ["X8WCJJ", null]
+        bag_code:
+          type: ['null', 'string']
+          description: Optional FCL bag code for pre-labelled sample bags.
+          examples: [null]
+
+    OrderSummary:
+      type: object
+      required:
+        - number
+        - placed_time
+        - product_id
+        - product_quantity
+        - subtotal_gross_gbp_p
+        - subtotal_net_gbp_p
+        - total_gross_gbp_p
+        - total_net_gbp_p
+        - vat_rate
+        - fulfillment_status
+        - payment_status
+        - arrived_time
+        - fulfilled_time
+        - canceled_time
+      properties:
+        number:
+          type: integer
+          description: Unique order number.
+          examples: [1042]
+        placed_time:
+          type: string
+          format: date-time
+          description: Time the order was placed.
+          examples: ["2026-01-15T10:05:00Z"]
+        product_id:
+          type: string
+          description: ID of the ordered product.
+          examples: ["2868FX"]
+        product_quantity:
+          type: integer
+          description: Number of samples.
+          examples: [3]
+        subtotal_gross_gbp_p:
+          type: integer
+          description: Subtotal in GBP pence.
+          examples: [3600]
+        subtotal_net_gbp_p:
+          type: integer
+          description: Subtotal excluding VAT, in GBP pence.
+          examples: [3000]
+        total_gross_gbp_p:
+          type: integer
+          description: Total charged in GBP pence.
+          examples: [3600]
+        total_net_gbp_p:
+          type: integer
+          description: Total excluding VAT, in GBP pence.
+          examples: [3000]
+        vat_rate:
+          type: number
+          description: VAT rate applied.
+          examples: [0.2]
+        fulfillment_status:
+          type: string
+          enum: [on_hold, unfulfilled, partially_fulfilled, fulfilled, processing, canceled]
+          description: Current fulfillment status.
+          examples: ["unfulfilled"]
+        payment_status:
+          type: string
+          enum: [processing, paid, delayed, refunded]
+          description: Current payment status.
+          examples: ["paid"]
+        arrived_time:
+          type: ['null', 'string']
+          format: date-time
+          description: Time the samples arrived at the FCL lab. Null until received.
+        fulfilled_time:
+          type: ['null', 'string']
+          format: date-time
+          description: Time the order was fully fulfilled. Null until complete.
+        canceled_time:
+          type: ['null', 'string']
+          format: date-time
+          description: Time the order was canceled. Null unless canceled.
+
+    OrderList:
+      type: object
+      required:
+        - items
+      properties:
+        items:
+          type: array
+          items:
+            $ref: "#/components/schemas/OrderSummary"
+        next:
+          type: ['null', 'string']
+          description: Pass as `cursor` in the next request to get the next page. `null` when there are no more results.
+          examples: ["ABC123", null]
+
+    Order:
+      type: object
+      required:
+        - number
+        - placed_time
+        - product_id
+        - product_quantity
+        - fulfillment_status
+        - payment_status
+        - results_download_url
+        - samples
+      properties:
+        number:
+          type: integer
+          description: Unique order number.
+          examples: [1042]
+        placed_time:
+          type: string
+          format: date-time
+          description: Time the order was placed.
+          examples: ["2026-01-15T10:05:00Z"]
+        product_id:
+          type: string
+          description: ID of the ordered product.
+          examples: ["2868FX"]
+        product_quantity:
+          type: integer
+          description: Number of samples.
+          examples: [3]
+        fulfillment_status:
+          type: string
+          enum: [on_hold, unfulfilled, partially_fulfilled, fulfilled, processing, canceled]
+          description: Current fulfillment status.
+          examples: ["unfulfilled"]
+        payment_status:
+          type: string
+          enum: [processing, paid, delayed, refunded]
+          description: Current payment status.
+          examples: ["paid"]
+        results_download_url:
+          type: ['null', 'string']
+          format: uri
+          description: >
+            Pre-authenticated URL to download all results. Populated once
+            `fulfillment_status` reaches `fulfilled` or `partially_fulfilled`.
+            Expires after 24 hours.
+        samples:
+          type: array
+          items:
+            $ref: "#/components/schemas/OrderSample"
+
+    OrderSample:
+      type: object
+      required:
+        - number
+        - uuid
+        - name
+        - expected_length
+      properties:
+        number:
+          type: integer
+          description: 1-based sample index within the order.
+          examples: [1]
+        uuid:
+          type: string
+          format: uuid
+          description: Globally unique sample identifier.
+          examples: ["a1b2c3d4-e5f6-7890-abcd-ef1234567890"]
+        name:
+          type: string
+          description: Sample name as submitted.
+          examples: ["Plasmid A"]
+        expected_length:
+          type: ['null', 'integer']
+          description: Expected sequence length in base pairs, if provided at cart time.
+          examples: [4500, null]
+
+    # ------------------------------------------------------------------
+    # Sample data
+    # ------------------------------------------------------------------
+    SampleData:
+      type: object
+      required:
+        - sample_name
+        - length
+        - sequence
+      properties:
+        sample_name:
+          type: string
+          description: Sample name as submitted in the cart.
+          examples: ["Sample 1"]
+        length:
+          type: integer
+          description: Length of the assembled sequence in base pairs.
+          examples: [8415]
+        sequence:
+          type: string
+          description: Assembled consensus sequence.
+          examples: ["TAAACAGTAATACAA...CTTACA"]
+
+    # ------------------------------------------------------------------
+    # Error
+    # ------------------------------------------------------------------
+    AppError:
+      type: object
+      required:
+        - error
+      properties:
+        error:
+          type: object
+          required:
+            - code
+          properties:
+            code:
+              type: string
+              description: Machine-readable error code.
+              examples:
+                - account_not_found
+                - product_not_found
+                - cart_not_found
+                - cart_id_conflict
+                - virtual_card_not_found
+                - insufficient_balance
+                - missing_billing_address
+                - order_not_found
+                - invalid_virtual_card_payment
+
+  parameters:
+    product_id:
+      name: product_id
+      in: path
+      description: Product ID from `GET /products`.
+      required: true
+      schema:
+        type: string
+      example: "2868FX"
+
+    order_number:
+      name: order_number
+      in: path
+      description: Unique order number returned by `POST /orders` or listed in `GET /orders`.
+      required: true
+      schema:
+        type: integer
+      example: 1042
+
+  securitySchemes:
+    BearerAuth:
+      type: http
+      scheme: bearer
+
+  responses:
+    Unauthorized:
+      description: API key is missing, invalid, or has the wrong audience.
+      headers:
+        WWW-Authenticate:
+          schema:
+            type: string
+    NotFound:
+      description: The requested resource does not exist.
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/AppError"
+    AppError:
+      description: >
+        Application error. The `error.code` field contains a machine-readable
+        string describing the problem.
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/AppError"

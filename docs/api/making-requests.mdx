@@ -1,0 +1,98 @@
+---
+title: Order with the API
+description: Request format, headers, and pagination conventions for the FCL API.
+sidebar_position: 3
+---
+
+# Order with the API
+
+This page explains how to place an order using the FCL API using Python. It relies on the [`requests`](https://pypi.org/project/requests/) package.
+
+
+1. Load your API key in your Python script
+```python
+import os
+import requests
+
+FCL_API_URL = "https://api.fcl.bio/v1"
+YOUR_API_KEY = os.environ.get("YOUR_API_KEY")
+
+PRODUCT_CODE = "FLPS001"
+VIRTUAL_CARD_ID = "CQ8CPF"
+
+auth = {
+    "Authorization": "Bearer " + YOUR_API_KEY,
+}
+```
+2. Check the products code and select the products you want to order
+```python
+response = requests.get(FCL_API_URL + "/products", headers=auth)
+if response.status_code != 200:
+    print(response.json())
+    exit(1)
+print("Products:")
+for x in response.json()["items"]:
+    print("- %s: %.2f" % (x["name"], x["price_gbp_p"] / 100))
+```
+3. Check your Virtual Cards and select the one you want to use
+```python
+response = requests.get(FCL_API_URL + "/virtual_cards", headers=auth)
+if response.status_code != 200:
+    print(response.json())
+    exit(1)
+print("Virtual cards:")
+for x in response.json()["items"]:
+    print("- %s: %.2f" % (x["id"], x["balance_gbp_p"] / 100))
+```
+4. Have a look at the available drop-off points if you are using one
+```python
+response = requests.get(FCL_API_URL + "/dropoff_points", headers=auth)
+if response.status_code != 200:
+    print(response.json())
+    exit(1)
+print("Drop-off points:")
+for x in response.json()["items"]:
+    print("- %s: %s" % (x["id"], x["name"]))
+```
+5. Fill in your samples information
+```python
+samples = [
+    { "name": "Another one" },
+    { "name": "One more" },
+    { "name": "Sample 293847" },
+]
+```
+6. Add your samples to your cart and the price of your order
+```python
+response = requests.post(FCL_API_URL + "/cart", headers=auth, json={
+    "product_code": PRODUCT_CODE,
+    "product_quantity": len(samples),
+    "items": { "samples": samples },
+})
+if response.status_code != 200:
+    print(response.json())
+    exit(1)
+cart = response.json()
+print("Added %d samples to cart." % cart["product_quantity"])
+print("Total: GBP %.2f" % (cart["total_gross_gbp_p"] / 100))
+```
+7. Place your order. If you are mailing your samples, you don't have to provide a `dropoff_point_id`. If you do not use a bag code, you don't have to provide a `bag_code`.
+```python
+response = requests.post(FCL_API_URL + "/orders", headers=auth, json={
+    "payment_method": "virtual_card",
+    "payment_virtual_card_id": VIRTUAL_CARD_ID,
+    "cart_id": cart["id"],
+    # Optional fields:
+    # "dropoff_point_id": None,
+    # "bag_code": None,
+})
+if response.status_code != 200:
+    print(response.json())
+    exit(1)
+order = response.json()
+print("Placed order: %d" % order["number"])
+```
+
+:::info
+If you are using an AI agent, it can analyse the product descriptions and tell you which fits the needs of your experiment.
+:::

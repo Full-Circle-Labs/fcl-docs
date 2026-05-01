@@ -1,0 +1,73 @@
+---
+title: Authentication
+description: How to authenticate requests to the FCL API using API keys.
+sidebar_position: 2
+---
+
+# Authentication
+
+The FCL API uses Bearer token authentication. Every request must include a valid API key.
+
+## Generating an API key
+
+Once logged into your account, click on the toolbox icon (<img src="/img/icon-dev-docs.png" alt="toolbox icon" style={{width: '3%'}} />) and select API Keys in the drop down menu. 
+You will reach the API keys management dashboard (Figure 1). Fill the key name and click on "Add". The key will be displayed, store it securely because it is only displayed once at creation time.
+
+<div style={{textAlign: 'center'}}>
+<img src="/img/add-api-key.png" alt="API Keys management dashboard showing the key name field and Add button" style={{width: '70%'}} />
+
+*Figure 1 - API Keys management dashboard*
+</div>
+
+## Including your key in requests
+
+Store your API keys in a `.env` file that you load with `source .env` when opening a new terminal.
+Pass your API key in the `Authorization` header:
+
+```
+Authorization: Bearer $YOUR_API_KEY
+```
+
+### Examples
+How to structure your `.env` file:
+```bash
+YOUR_API_KEY=<API_KEY>
+```
+
+import Tabs from '@theme/Tabs';
+import TabItem from '@theme/TabItem';
+
+<Tabs>
+  <TabItem value="curl" label="cURL" default>
+
+```bash
+curl -H "Authorization: Bearer $YOUR_API_KEY" \
+  https://api.fcl.bio/v1/products
+```
+
+  </TabItem>
+  <TabItem value="python" label="Python">
+
+```python
+import os
+import requests
+
+YOUR_API_KEY = os.environ.get("YOUR_API_KEY")
+
+response = requests.get(
+    'https://api.fcl.bio/v1/products',
+    headers={'Authorization': f'Bearer {YOUR_API_KEY}'},
+)
+data = response.json()
+```
+
+  </TabItem>
+</Tabs>
+
+## Rotating keys
+
+You can rotate a key at any time from the dashboard without downtime, create the new key, update your integration, then delete the old key on the API Keys management dashboard.
+
+## Security best practices
+
+Never commit API keys to source control. Use environment variables or a secrets manager to keep keys out of your codebase.

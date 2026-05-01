@@ -1,0 +1,96 @@
+---
+title: Results
+description: Description about the results we send to our customers
+sidebar_position: 4
+---
+
+When you receive the email to download or preview your results, you can see two columns giving you information about the status of your results. We use two type of statuses, sample status and QC status.
+
+## Standard output
+
+- Assembled sequence file (`.final.fasta`)
+- Confidence of assembly file (.confidence.fasta) which converts lower confidence bases (&lt;Q20) to lower case, for easy interpretation when aligning sequences.
+- Annotated genbank file and html plot (`.final_pLann.html` and `.final_pLann.gbk`)
+- Raw basecalled sequencing data (`_raw.fastq.gz`)
+- Length and quality plots for your raw reads (`_length.png` and `_qual.png`)
+- Statistics file used to generate the length and quality plots (`.stats`)
+- As a final check we align the raw basecalled reads against your assembled amplicon file and provide a file that shows the proportion of bases that correspond to the assembled amplicon fasta by position (`_alignment.csv`). We place potentially problematic positions at the top of this file (where the proportion corresponds to less than 80% of the total number of reads covering that position). We also provide a visual representation of this data (`_bam_alignment.png`) and a format compatible with bioinformatics software to quickly visualise the quality (`.fastq`).
+
+## Statuses
+### Sample status
+
+This column provides information about what we are currently doing with your samples. Your sample can have three different statuses:
+
+| Status | Description |
+| ------ | ----------- |
+| **Completed** | We obtained a consensus sequence that meets our quality standards, or we repeated sequencing twice and were unable to obtain quality data. Sequencing data is available to download. |
+| **Will be repeated** | We sequenced your sample but could not obtain a consensus that meets our standards. We will repeat sequencing on the next run. Raw FASTQ files are available in the meantime. |
+| **Pending** | We sequenced your sample and have enough reads, but our pipeline flagged an issue requiring manual review. Your data will be available shortly. |
+
+
+
+### QC Status
+
+In this column you will notice different characteristics we observed about your sequencing data/consensus. Here is the description of each flag you may see in your sequencing report. Each flag describes what was detected in your sample, what it means for your data, and what to do next.
+
+#### Concatemer
+
+We raise this flag when more than 5% of the reads we got for your sample are concatemers of the consensus we obtained. It means that multiple copies of your plasmid have ligated together in a head-to-tail fashion, creating dimer, trimer or higher-order multimers. This can be caused by the cloning strain used. You may see read length peaks at exact multiples of your designed plasmid size. 
+
+For many applications, concatemers may not be a problem, you effectively have a higher copy number of your insert. For protein expression and similar uses, this is often inconsequential. For more background, see the Addgene Plasmids 101: Dimers and Multimers article.
+
+**What you receive:** Your plasmid consensus sequence and also sequencing data having reads that are direct multiples of your plasmid. You will also know the percentage of reads that are actual concatemers of the plasmid we assembled. 
+
+#### Read Shearing
+
+More than 60% of the reads in your sample are shorter than 300 bp, which we interpret as a sign of DNA fragmentation or shearing. This can occur when there is fragmented or linear DNA present in your sample. Our enzyme cuts circular DNA only once to linearise it, but any pre-existing linear or degraded DNA may shear further during processing.
+
+Shearing can also be flagged when very little material was sequenced, as the short reads then make up a disproportionately large fraction of the data. This threshold is part of our automated pipeline and constantly refining it. Possible causes include poor-quality DNA preps or inaccuracies in the volume of sample added during the barcoding step.
+
+**What you receive:** Your sequencing data with the note that a significant proportion of reads are shorter than 300 bp.
+
+#### Not Enough Reads
+
+Your sample generated fewer than 20 reads during sequencing, which is insufficient for reliable analysis. This typically indicates that there was very little DNA in your sample.
+
+**What you receive:** The available sequencing data, with a note that coverage is too low for confident results.
+
+#### High Host Contamination
+
+A significant proportion of the sequencing reads originate from the host organism (we align your reads against *E. coli’s genome*) rather than your plasmid. This reduces the effective coverage of your plasmid sequence.
+
+**What you receive:** Your sequencing data, with a note indicating the level of host contamination detected.
+
+#### Pending
+
+We are still working on your data, our pipeline has flagged some issues with your samples that require a manual verification. We understand how frustrating this can be and we are working hard to get your sequence to meet our high standards.
+
+**What happens next:** We are manually analysing your sequencing data and will send you a consensus sequence as soon as possible. You will be notified when your results are ready.
+
+#### No Consensus
+
+Our pipeline was unable to generate a consensus sequence from your reads. This can occur when read quality or coverage is insufficient to confidently resolve the sequence.
+
+**What happens next:** We will repeat the sequencing of your sample at no charge. You will be notified when your results are available.
+
+#### No Data
+
+Something went wrong during the sequencing run for your sample and we did not obtain any usable data. 
+
+**What happens next:** We will re-sequence your sample as soon as possible. You will be notified when your results are ready.
+
+
+## Troubleshooting
+### Incorrect plasmid size
+There can be many reasons for your plasmid not being the correct size. First, look at the read length distributions and you should see a "peak" of reads around the size of your plasmid. If you see a peak around the size of the plasmid sequence that we sent to you, then our sequencing pipeline has assembled it correctly and it is likely an issue with the cloning. If you see something else, just email us and we would be happy to look into it!
+
+### Failure modes 
+
+The most common failure modes for ONT sequencing are (1) genomic DNA contamination and (2) too low sample concentration. We often find that there is substantial genomic DNA contamination and this essentially leads to low effective plasmid concentrations. Although other providers recommend sending Qubit quantified DNA we find that this can be quite the ask for most groups. We ask that you run an electrophoresis gel when you first send us samples to check the quality of your plasmid preparations and ensure the spectrophotometrically measured DNA concentrations make sense given what you see on your gel.
+
+### Error in the plasmid sequence
+Nanopore has two "failure modes" when it comes to basecalling. The first is homopolymer regions (polyA, G, T and C) where it often is not able to tell how long the stretch is as the current doesn't change while the strand moves through the pore. The second is methylated regions; although basecalling models exist to call base modifications, methylation can still introduce errors at modified bases.
+
+---
+
+*If you have questions about your results or any of the flags above, please don't hesitate to get in touch with our support team at contact@fullcirclelabs.bio.*

@@ -1,0 +1,27 @@
+---
+title: Use with AI Agents
+description: How to give AI coding assistants access to the FCL API spec.
+sidebar_position: 4
+---
+
+# Use with AI Agents
+
+AI coding assistants (Cursor, Windsurf, Claude, Copilot, etc.) can read the FCL OpenAPI spec to help you write integrations, generate client code, and answer questions about the API without manual look-ups.
+
+## Download the OpenAPI spec
+
+Point your assistant at the spec URL, or download it locally:
+
+```bash
+curl -O https://docs.fcl.bio/openapi/fcl-api-v1.yaml
+```
+
+Direct link: [fcl-api-v1.yaml](https://docs.fcl.bio/openapi/fcl-api-v1.yaml)
+
+## Add to your project
+
+Most AI-assisted editors let you attach a local file or URL as context. Drop the spec in your repo root and reference it from your assistant's context configuration, the assistant can then answer questions like "which endpoint do I call to list my orders?" or generate a typed client directly.
+
+## LLM-friendly index
+
+This documentation site also publishes an [`llms.txt`](https://docs.fcl.bio/llms.txt) index, a lightweight list of all pages with titles and descriptions — for assistants that prefer prose over raw YAML.

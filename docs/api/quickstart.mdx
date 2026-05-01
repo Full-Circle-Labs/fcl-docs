@@ -1,0 +1,92 @@
+---
+title: Quickstart
+description: Get up and running with the FCL API in minutes.
+sidebar_position: 1
+---
+
+# Quickstart
+
+This guide walks you through the set up of your environment to make your first request to the FCL API.
+:::warning
+This API is currently experimental, breaking changes will occur. We invite you to share feedback and suggestions by getting in touch at contact@fullcirclelabs.bio
+:::
+
+
+## Prerequisites
+
+Before you begin, you will need an FCL account and an active API key to submit requests. 
+If you don't have an account, you can create one [here](https://v1.fcl.bio/). See [Authentication](./authentication) for instructions on generating a key.
+
+## Base URL
+
+All API requests are made to the following base URL:
+
+```
+https://api.fcl.bio/v1
+```
+
+## Your first request
+
+Use the products endpoint to confirm your setup is working:
+
+```bash
+curl -H "Authorization: Bearer $YOUR_API_KEY" \
+  https://api.fcl.bio/v1/products
+```
+
+A successful response returns the products list as JSON:
+```json
+{
+  "items": [
+    {
+      "id": "2868FX",
+      "name": "Full-Length Plasmid Sequencing",
+      "code": "FLPS001",
+      "description": "Whole plasmid sequencing, as simple as that. All plasmid sizes up to around 30 kb. No primers needed.",
+      "price_gbp_p": 1200
+    },
+    {
+      "id": "HWPWPJ",
+      "name": "PCR Amplicon Sequencing",
+      "code": "PAS001",
+      "description": "We can perform sequencing of PCR amplicons (larger than ~300 bp) and generate a consensus sequence. Please note this is not the same as sequencing a PCR library (where it is expected that there will be multiple different PCR products) and will also not work for small PCR amplicons (smaller than ~300 bp).",
+      "price_gbp_p": 1200
+    },
+    {
+      "id": "P3Q5RH",
+      "name": "PCR Library Sequencing",
+      "code": "PLS001",
+      "description": "This is our premium PCR service which uses a library preparation method that allows for the entire PCR sequence to be sequenced and is suitable when it is expected that the sequence is not clonal (libraries etc). It is also suitable for fragments less than 300 bp (we've gone down to 50 bp). Turnaround times are slightly longer for this service (<7 days). Please make sure your samples are all submitted at equal concentrations (400 fmol) in 20 microliters ofnuclease free water. We try to always provide 1000 reads per sample, but in cases where the sample quality is poor this may not be possible.",
+      "price_gbp_p": 3000
+    },
+    {
+      "id": "2864FX",
+      "name": "Virtual Card Credit",
+      "code": "VC001",
+      "description": "Top-up your account with virtual credits and share them across multiple accounts.",
+      "price_gbp_p": 1
+    },
+    {
+      "id": "Q5R9WG",
+      "name": "Short Read 50k",
+      "code": "SR50K",
+      "description": "Designed as an Illumina sequencing replacement. Read lengths of around 200-250 bp. Turnarounds of less than 7 days (we're aiming for around 3!).",
+      "price_gbp_p": 6000
+    }
+  ],
+  "next": null
+}
+```
+
+## Next steps
+
+Once you have confirmed connectivity, explore the [API Endpoints](/docs/reference/fcl-api) for the full list of available endpoints, or read our [Order with the API](./making-requests) guide for the details on placing your order with Python.
+
+A typical workflow follows these steps:
+
+1. `GET /products` to find the code of the product you want to order
+2. `GET /virtual_cards` to check your virtual cards and available balance
+3. `POST /cart` to add your samples
+4. `POST /orders` to place and pay for the order
+5. `GET /orders/{order_number}` to poll for status and results
+6. `GET /orders/{order_number}/fasta` to retrieve the assembled sequence for each sample
