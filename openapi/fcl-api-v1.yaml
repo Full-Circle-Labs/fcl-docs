@@ -7,17 +7,50 @@ servers:
   - url: https://api.v1.fcl.bio/v1
 
 paths:
-  /admin/orders/{order_number}:
+  /orders:
     get:
       tags:
-        - admin
+        - customer
+      summary: List orders
+      security:
+        - BearerAuth: []
+      operationId: listOrders
+      description: >
+        Fetches a paginated list of orders for the authenticated account,
+        returning a summary of each order without full sample or sequencing details.
+      parameters:
+        - name: cursor
+          in: query
+          description: Pagination cursor returned from a previous response. Omit to fetch the first page.
+          required: false
+          schema:
+            type: integer
+          example: 1
+      responses:
+        "200":
+          description: A JSON object containing a list of order summaries and a pagination cursor.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/OrderListResponse"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/UnauthorizedError"
+        "500":
+          $ref: "#/components/responses/InternalServerError"
+
+  /orders/{order_number}:
+    get:
+      tags:
+        - customer
       summary: Get order details
       security:
         - BearerAuth: []
       operationId: getOrder
       description: >
         Fetches full details of an order including samples, sequencing runs,
-        sample statuses, account information and private details.
+        and sample statuses.
       parameters:
         - $ref: "#/components/parameters/order_number"
       responses:
@@ -38,21 +71,30 @@ paths:
 
 components:
   schemas:
-    OrderResponse:
+    # ------------------------------------------------------------------
+    # Order list
+    # ------------------------------------------------------------------
+    OrderListResponse:
       type: object
       required:
-        - order
-        - account
-        - private_details
+        - orders
+        - cursor
       properties:
-        order:
-          $ref: "#/components/schemas/Order"
-        account:
-          $ref: "#/components/schemas/Account"
-        private_details:
-          $ref: "#/components/schemas/PrivateDetails"
+        orders:
+          type: array
+          items:
+            $ref: "#/components/schemas/OrderSummary"
+        cursor:
+          type: ['null', 'integer']
+          description: >
+            Cursor to pass as a query parameter to retrieve the next page of results.
+            Null when there are no further pages.
+          examples: [1]
 
-    Order:
+    # ------------------------------------------------------------------
+    # Shared base — fields present in both list and detail responses
+    # ------------------------------------------------------------------
+    OrderBase:
       type: object
       required:
         - number
@@ -66,14 +108,6 @@ components:
         - vat_rate
         - fulfillment_status
         - payment_status
-        - payment_method
-        - is_eligible_for_free_shipping
-        - dropoff_point_name
-        - results_download_url
-        - results_preview_url
-        - samples
-        - seq_runs
-        - sample_status
       properties:
         number:
           type: integer
@@ -119,29 +153,11 @@ components:
         fulfillment_status:
           type: string
           description: The fulfillment status of the order
-          examples: ["unfulfilled"]
+          examples: ["fulfilled", "unfulfilled", "canceled"]
         payment_status:
           type: string
           description: The payment status of the order
-          examples: ["delayed"]
-        payment_method:
-          type: string
-          description: The payment method used for the order
-          examples: ["invoice_later"]
-        purchase_order:
-          type: string
-          description: The purchase order reference
-          examples: ["freesamples"]
-        shipping_label:
-          type: ['null', 'string']
-          description: The shipping label for the order, if applicable
-        bag_code:
-          type: ['null', 'string']
-          description: The bag code for the order, if applicable
-        dropoff_point_name:
-          type: string
-          description: The name of the dropoff point for the order
-          examples: ["Royal Mail"]
+          examples: ["paid", "delayed"]
         fulfilled_time:
           type: ['null', 'string']
           format: date-time
@@ -150,26 +166,103 @@ components:
           type: ['null', 'string']
           format: date-time
           description: The time the order was canceled, if applicable
-        results_download_url:
-          type: string
-          format: uri
-          description: Pre-authenticated URL to download all results for the order
-          examples: ["https://app.fcl.bio/v0/reports/8722/download?key=<API_KEY>"]
-        results_preview_url:
-          type: string
-          format: uri
-          description: Pre-authenticated URL to view the html report for the order
-          examples: ["https://app.fcl.bio/?key=<API_KEY>#/orders/8722"]
-        samples:
-          type: array
-          items:
-            $ref: "#/components/schemas/OrderSample"
-        seq_runs:
-          type: array
-          items:
-            $ref: "#/components/schemas/SeqRun"
-        sample_status:
-          $ref: "#/components/schemas/SampleStatus"
+
+    # List endpoint — base fields only
+    OrderSummary:
+      description: A lightweight summary of an order, as returned by the list endpoint.
+      allOf:
+        - $ref: "#/components/schemas/OrderBase"
+
+    # ------------------------------------------------------------------
+    # Order detail
+    # ------------------------------------------------------------------
+    OrderResponse:
+      type: object
+      required:
+        - order
+      properties:
+        order:
+          $ref: "#/components/schemas/Order"
+
+    # Detail endpoint — base fields plus everything else
+    Order:
+      allOf:
+        - $ref: "#/components/schemas/OrderBase"
+        - type: object
+          required:
+            - payment_method
+            - is_eligible_for_free_shipping
+            - results_download_url
+            - results_preview_url
+            - samples
+            - seq_runs
+            - sample_status
+          properties:
+            payment_method:
+              type: string
+              description: The payment method used for the order
+              examples: ["invoice_later"]
+            payment_virtual_card_id:
+              type: ['null', 'string']
+              description: The virtual card ID used for payment, if applicable
+            topup_virtual_card_id:
+              type: ['null', 'string']
+              description: The virtual card ID used for top-up, if applicable
+            purchase_order:
+              type: string
+              description: The purchase order reference
+              examples: ["freesamples"]
+            shipping_label:
+              description: Shipping label details, if a shipment has been created.
+              oneOf:
+                - type: 'null'
+                - type: object
+                  required:
+                    - postage_label_url
+                    - tracker_url
+                  properties:
+                    postage_label_url:
+                      type: string
+                      format: uri
+                      description: URL to the postage label
+                    tracker_url:
+                      type: string
+                      format: uri
+                      description: URL to track the shipment
+            is_eligible_for_free_shipping:
+              type: boolean
+              description: Whether the order is eligible for free shipping
+            bag_code:
+              type: ['null', 'string']
+              description: The bag code for the order, if applicable
+            dropoff_point_id:
+              type: ['null', 'string']
+              description: The ID of the dropoff point for the order, if applicable
+              examples: ["ABC123"]
+            results_download_url:
+              type: ['null', 'string']
+              format: uri
+              description: >
+                Pre-authenticated URL to download all results for the order.
+                Null if the order has not been fulfilled.
+              examples: ["https://app.fcl.bio/v0/reports/8722/download?key=<API_KEY>"]
+            results_preview_url:
+              type: ['null', 'string']
+              format: uri
+              description: >
+                Pre-authenticated URL to view the HTML report for the order.
+                Null if the order has not been fulfilled.
+              examples: ["https://app.fcl.bio/?key=<API_KEY>#/orders/8722"]
+            samples:
+              type: array
+              items:
+                $ref: "#/components/schemas/OrderSample"
+            seq_runs:
+              type: array
+              items:
+                $ref: "#/components/schemas/SeqRun"
+            sample_status:
+              $ref: "#/components/schemas/SampleStatus"
 
     OrderSample:
       type: object
@@ -177,9 +270,6 @@ components:
         - number
         - uuid
         - name
-        - last_status
-        - last_completed_run_id
-        - fasta_download_url
       properties:
         number:
           type: integer
@@ -198,17 +288,19 @@ components:
           type: ['null', 'integer']
           description: The expected length of the sequence, if known
         last_status:
-          type: string
-          description: The last status of the sample
+          type: ['null', 'string']
+          description: The last status of the sample (c=correct, r=repeat, p=processing, null=ordered)
           examples: ["c"]
         last_completed_run_id:
-          type: integer
+          type: ['null', 'integer']
           description: The ID of the last completed sequencing run
           examples: [609]
-        fasta_download_url:
-          type: string
+        fasta_url:
+          type: ['null', 'string']
           format: uri
-          description: Pre-authenticated URL to download the FASTA sequence for this sample
+          description: >
+            Pre-authenticated URL to download the FASTA sequence for this sample.
+            Null if the sample has not been completed.
           examples: ["https://app.fcl.bio/v0/reports/8722/samples/Control1/fasta?key=<API_KEY>"]
 
     SeqRun:
@@ -216,8 +308,6 @@ components:
       required:
         - id
         - created_time
-        - locked_time
-        - completed_time
       properties:
         id:
           type: integer
@@ -229,14 +319,14 @@ components:
           description: The time the sequencing run was created
           examples: ["2026-04-17T16:05:44.130432+00:00"]
         locked_time:
-          type: string
+          type: ['null', 'string']
           format: date-time
-          description: The time the sequencing run was locked
+          description: The time the sequencing run was locked, if applicable
           examples: ["2026-04-17T18:20:07.889355+00:00"]
         completed_time:
-          type: string
+          type: ['null', 'string']
           format: date-time
-          description: The time the sequencing run was completed
+          description: The time the sequencing run was completed, if applicable
           examples: ["2026-04-17T21:44:54.768523+00:00"]
 
     SampleStatus:
@@ -261,12 +351,9 @@ components:
 
     SampleStatusDetail:
       type: object
-      required:
-        - status
-        - completed_time
       properties:
         status:
-          type: string
+          type: ['null', 'string']
           description: The status code of the sample
           examples: ["c"]
         qc_note:
@@ -274,60 +361,10 @@ components:
           description: Quality control note for the sample
           examples: ["correct control"]
         completed_time:
-          type: string
+          type: ['null', 'string']
           format: date-time
           description: The time the sample status was completed
           examples: ["2026-04-17T21:44:54.768523+00:00"]
-
-    Account:
-      type: object
-      required:
-        - id
-        - email
-        - saleor_id
-        - first_name
-        - last_name
-        - is_staff
-        - virtual_card_id
-      properties:
-        id:
-          type: string
-          description: The unique identifier for the account
-          examples: ["5PF2JV"]
-        email:
-          type: string
-          format: email
-          description: The email address of the account
-          examples: ["michael+demo@fullcirclelabs.bio"]
-        saleor_id:
-          type: string
-          description: The Saleor platform identifier for the account
-          examples: ["VXNlcjoyMDg0NTEyNzkx"]
-        first_name:
-          type: string
-          examples: ["Michael"]
-        last_name:
-          type: string
-          examples: ["Crone"]
-        is_staff:
-          type: boolean
-          description: Whether the account has staff privileges
-          examples: [false]
-        virtual_card_id:
-          type: string
-          description: The virtual card identifier for the account
-          examples: ["WX8CX4"]
-        vat_number:
-          type: ['null', 'string']
-          description: The VAT number of the account, if applicable
-
-    PrivateDetails:
-      type: object
-      properties:
-        admin_notes:
-          type: string
-          description: Internal admin notes for the order
-          examples: [""]
 
   parameters:
     order_number:

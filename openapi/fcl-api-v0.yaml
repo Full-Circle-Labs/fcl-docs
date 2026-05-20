@@ -1,0 +1,120 @@
+openapi: '3.1.0'
+info:
+  title: FCL Sample download API
+  description: API for downloading FCL samples
+  version: '1.0'
+servers:
+  - url: https://app.fcl.bio/v0
+paths:
+  /reports/{order_number}/samples/{sample_name}/fasta:
+    get:
+      tags:
+        - sample
+      summary: Get FASTA sequence for a sample
+      security:
+        - BearerAuth: []
+      responses:
+        "200":
+          description: FASTA sequence indexed by timestamp.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/FastaResponse"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "500":
+          $ref: "#/components/responses/InternalServerError"
+        "401":
+          $ref: "#/components/responses/UnauthorizedError"
+      parameters:
+        - $ref: "#/components/parameters/order_number"
+        - $ref: "#/components/parameters/sample_name"
+      description: >
+        Fetches the FASTA sequence of a specific sample from an order. The
+        response is a JSON object where each key is an ISO 8601 timestamp
+        representing the sample release time, and the value is a structured
+        object containing the sequence ID, length, and sequence string.
+      operationId: getSample
+
+components:
+  schemas:
+    SequenceEntry:
+      type: object
+      description: Structured representation of a FASTA sequence.
+      required:
+        - id
+        - length
+        - sequence
+      properties:
+        id:
+          type: string
+          description: The sample identifier, matching the FASTA header ID.
+          example: "Sample 1"
+        length:
+          type: integer
+          description: The sequence length in base pairs.
+          example: 3368
+        sequence:
+          type: string
+          description: The nucleotide sequence string.
+          example: "CGTCGCTGGGCGCAGTGG..."
+
+    FastaResponse:
+      type: object
+      description: >
+        JSON object where each key is an ISO 8601 timestamp representing
+        the sample release time, and the value is a structured sequence entry.
+      minProperties: 1
+      additionalProperties:
+        $ref: "#/components/schemas/SequenceEntry"
+      example:
+        "2026-03-27T23:21:14+00:00":
+          id: "Sample 1"
+          length: 3368
+          sequence: "CGTCGCTGGGCGCAGTGG..."
+        "2026-04-17T08:09:52+00:00":
+          id: "Sample 1"
+          length: 3368
+          sequence: "CGTCGCTGGGCGCAGTGG..."
+
+  parameters:
+    order_number:
+      name: order_number
+      in: path
+      description: The unique identifier for the order
+      required: true
+      schema:
+        type: integer
+      example: 27505
+    sample_name:
+      name: sample_name
+      in: path
+      description: >
+        The name of the sample. Must be URL-encoded if it contains spaces
+        or special characters (e.g. "Sample 1" → "Sample%201").
+      required: true
+      schema:
+        type: string
+      example: "Sample 1"
+
+  securitySchemes:
+    BearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+
+  responses:
+    BadRequest:
+      description: Bad Request - The request was invalid or cannot be served.
+    NotFound:
+      description: Not Found - The requested resource could not be found.
+    InternalServerError:
+      description: Internal Server Error - An error occurred on the server.
+    UnauthorizedError:
+      description: API key is missing or invalid
+      headers:
+        WWW_Authenticate:
+          schema:
+            type: string

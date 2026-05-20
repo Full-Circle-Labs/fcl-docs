@@ -1,41 +1,60 @@
-# Website
+# FCL Docs
 
-This website is built using [Docusaurus](https://docusaurus.io/), a modern static website generator.
+Documentation site for [Full Circle Labs](https://fullcirclelabs.bio), built with [Docusaurus 3](https://docusaurus.io/) and deployed at [docs.fullcirclelabs.bio](https://docs.fullcirclelabs.bio).
 
-## Installation
+## Setup
 
-```bash
-yarn
-```
-
-## Local Development
+Create and activate the conda environment, then install Node dependencies:
 
 ```bash
-yarn start
+conda env create -f environment.yml
+conda activate fcl-docs
+npm install
 ```
 
-This command starts a local development server and opens up a browser window. Most changes are reflected live without having to restart the server.
-
-## Build
+## Development
 
 ```bash
-yarn build
+npm run start        # local dev server with hot reload
 ```
 
-This command generates static content into the `build` directory and can be served using any static contents hosting service.
+## Building
 
-## Deployment
-
-Using SSH:
+The build pipeline runs three stages: generate API docs → build static site → generate `llms.txt`.
 
 ```bash
-USE_SSH=true yarn deploy
+npm run build        # full build
+npm run serve        # serve the built site locally
 ```
 
-Not using SSH:
+To regenerate only the API reference docs from the OpenAPI specs:
 
 ```bash
-GIT_USER=<Your GitHub username> yarn deploy
+npm run gen-api-docs   # regenerate docs/api/ from openapi/
+npm run clean-api-docs # delete all generated files in docs/api/
 ```
 
-If you are using GitHub pages for hosting, this command is a convenient way to build the website and push to the `gh-pages` branch.
+## API Reference
+
+API docs are auto-generated from the OpenAPI specs in `openapi/` — do not edit `docs/api/` manually.
+
+| Spec | Description | Output |
+|---|---|---|
+| `openapi/fcl-api-v0.yaml` | Sample Download API | `docs/api/v0/` |
+| `openapi/fcl-api-v1.yaml` | Main API | `docs/api/v1/` |
+
+To update the API reference: edit the relevant spec file, then run `npm run gen-api-docs`.
+
+## Docs structure
+
+```
+docs/
+  intro.mdx               # Landing page
+  getting-started/        # Auth, quickstart
+  guides/                 # How-to guides
+  reference/              # Rate limits, changelog
+  api/                    # Generated — do not edit
+openapi/
+  fcl-api-v0.yaml         # Sample Download API spec
+  fcl-api-v1.yaml         # Main API spec
+```

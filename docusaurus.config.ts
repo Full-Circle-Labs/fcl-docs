@@ -53,9 +53,16 @@ const config: Config = {
         id: 'api',
         docsPluginId: 'classic',
         config: {
-          fcl: {
-            specPath: 'openapi/openapi.yaml',
-            outputDir: 'docs/api',
+          fclV0: {
+            specPath: 'openapi/fcl-api-v0.yaml',
+            outputDir: 'docs/api/v0',
+            sidebarOptions: {
+              groupPathsBy: 'tag',
+            },
+          },
+          fclV1: {
+            specPath: 'openapi/fcl-api-v1.yaml',
+            outputDir: 'docs/api/v1',
             sidebarOptions: {
               groupPathsBy: 'tag',
             },

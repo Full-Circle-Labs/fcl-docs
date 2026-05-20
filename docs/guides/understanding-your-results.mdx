@@ -1,0 +1,41 @@
+---
+id: understanding-your-results
+title: Understanding Your Results
+description: How to interpret the sample status and QC flags in your FCL sequencing report email.
+---
+
+# Understanding Your Results
+
+When you receive the email to download or preview your results, you will see two columns giving you information about the status of each sample: **Sample Status** and **QC Status**.
+
+---
+
+## Sample Status
+
+This column shows what stage your sample is at in our pipeline.
+
+| Status | Meaning |
+|---|---|
+| **Completed** | We obtained a consensus sequence that meets our quality standards, or we repeated sequencing twice and were unable to obtain quality data. Sequencing data is available to download. |
+| **Will be repeated** | We sequenced your sample but could not obtain a consensus that meets our standards. We will repeat sequencing on the next run. Raw FASTQ files are available in the meantime. |
+| **Pending** | We sequenced your sample and have enough reads, but our pipeline flagged an issue requiring manual review. Your data will be available shortly. |
+
+---
+
+## QC Status
+
+This column describes characteristics we observed in your sequencing data.
+
+| Flag | What it means | What to expect |
+|---|---|---|
+| **Concatemer** | More than 5% of reads are concatemers — multiple copies of your plasmid ligated head-to-tail into dimers, trimers, or higher-order multimers. For most applications this is inconsequential; see [Addgene Plasmids 101: Dimers and Multimers](https://blog.addgene.org/plasmids-101-dimers-and-multimers) for background. | Your consensus sequence, reads at direct multiples of your plasmid size, and the percentage of concatemeric reads. |
+| **Read Shearing** | More than 60% of reads are shorter than 300 bp, indicating DNA fragmentation. Possible causes include poor-quality DNA preparations, pre-existing linear DNA in the sample, or inaccuracies in the volume added during barcoding. | Your sequencing data, with a note that a significant proportion of reads are shorter than 300 bp. |
+| **Not Enough Reads** | Fewer than 20 reads were generated, typically indicating very little DNA was present in the sample. | The available sequencing data, with a note that coverage is too low for confident results. |
+| **High Host Contamination** | A significant proportion of reads originate from the host organism (*E. coli*) rather than your plasmid, reducing effective coverage. | Your sequencing data, with a note indicating the level of host contamination detected. |
+| **Pending** | Our pipeline has flagged an issue requiring manual verification. We are actively working on your data. | We will send you a consensus sequence as soon as the manual review is complete. You will be notified when your results are ready. |
+| **No Consensus** | Our pipeline was unable to generate a consensus sequence due to insufficient read quality or coverage. | We will repeat sequencing at no charge. You will be notified when your results are available. |
+| **No Data** | Something went wrong during the sequencing run and no usable data was obtained for your sample. | We will re-sequence your sample as soon as possible. You will be notified when your results are ready. |
+
+---
+
+*If you have questions about your results or any of the flags above, please get in touch with our support team at [contact@fullcirclelabs.bio](mailto:contact@fullcirclelabs.bio).*

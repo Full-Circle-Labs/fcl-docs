@@ -1,0 +1,5 @@
+name: fcl-docs
+channels:
+  - conda-forge
+dependencies:
+  - nodejs=20

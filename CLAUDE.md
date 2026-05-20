@@ -2,6 +2,20 @@
 
 This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
 
+## Environment
+
+Use the `fcl-docs` conda environment (Node 20), defined in `environment.yml`. Always pass `--cwd` when using `conda run`:
+
+```bash
+conda run -n fcl-docs --cwd /path/to/fcl-docs npm install
+```
+
+Or activate the environment first:
+
+```bash
+conda activate fcl-docs
+```
+
 ## Commands
 
 ```bash
@@ -11,7 +25,7 @@ npm run start
 # Generate API docs from OpenAPI spec, then build static site + llms.txt
 npm run build
 
-# Regenerate docs/api/ from openapi/openapi.yaml only
+# Regenerate docs/api/ from all OpenAPI specs
 npm run gen-api-docs
 
 # Delete all generated API docs in docs/api/
@@ -24,13 +38,15 @@ npm run typecheck
 npm run serve
 ```
 
+Note: the repo has a `package-lock.json` — use `npm`, not `yarn`.
+
 ## Architecture
 
 This is a [Docusaurus 3](https://docusaurus.io/) documentation site for Full Circle Labs, deployed at `https://docs.fullcirclelabs.bio`.
 
 **Key architectural points:**
 
-- **API docs are generated, not hand-authored.** `docs/api/` is fully auto-generated from `openapi/openapi.yaml` by `docusaurus-plugin-openapi-docs`. That directory is gitignored (except `_category_.json` and `index.mdx`). Always edit the OpenAPI spec, then run `npm run gen-api-docs` to regenerate. Never edit files inside `docs/api/` manually.
+- **API docs are generated, not hand-authored.** `docs/api/` is fully auto-generated from the specs in `openapi/` by `docusaurus-plugin-openapi-docs`. That directory is gitignored (except `_category_.json`, subdirectory `_category_.json` files, and `index.mdx`). Always edit the OpenAPI spec, then run `npm run gen-api-docs` to regenerate. Never edit files inside `docs/api/` manually.
 
 - **Build pipeline has three stages:** `gen-api-docs` → `docusaurus build` → `scripts/generate-llms-txt.mjs`. The last stage produces `build/llms.txt`, an LLM-friendly index of all docs pages (title + URL + description), used for AI discoverability.
 
@@ -50,7 +66,8 @@ docs/
   reference/              # Rate limits, changelog
   api/                    # Generated — do not edit
 openapi/
-  openapi.yaml            # Source of truth for API reference
+  fcl-api-v0.yaml         # Sample Download API (v0) — source of truth
+  fcl-api-v1.yaml         # Main API (v1) — source of truth
 ```
 
 Docs pages use MDX. Frontmatter fields `title`, `description`, and `id` are picked up by `generate-llms-txt.mjs` for the `llms.txt` index.
