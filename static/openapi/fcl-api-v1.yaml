@@ -338,11 +338,11 @@ paths:
         - name: fulfillment_status
           in: query
           description: >
-            Comma-separated list of fulfillment statuses to include.
+            This field can be repeated to filter multiple statuses.
             Defaults to all statuses.
           schema:
             type: string
-          example: "unfulfilled,partially_fulfilled,fulfilled"
+          example: "unfulfilled"
         - name: payment_virtual_card
           in: query
           description: >
