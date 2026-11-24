@@ -39,39 +39,112 @@ A successful response returns the products list as JSON:
 {
   "items": [
     {
-      "id": "2868FX",
+      "id": "WJ8X78",
       "name": "Full-Length Plasmid Sequencing",
       "code": "FLPS001",
       "description": "Whole plasmid sequencing, as simple as that. All plasmid sizes up to around 30 kb. No primers needed.",
-      "price_gbp_p": 1200
+      "price_gbp_p": 1200,
+      "addons": [],
+      "sample_storage_temperature": -20.0,
+      "max_turnaround_hours": 24,
+      "concentration_info": "50 ng/μL",
+      "sample_type_info": "Purified plasmid sample, circular DNA up to 30 kb",
+      "volume_ul": 10
     },
     {
-      "id": "HWPWPJ",
+      "id": "WJ8V78",
       "name": "PCR Amplicon Sequencing",
       "code": "PAS001",
-      "description": "We can perform sequencing of PCR amplicons (larger than ~300 bp) and generate a consensus sequence. Please note this is not the same as sequencing a PCR library (where it is expected that there will be multiple different PCR products) and will also not work for small PCR amplicons (smaller than ~300 bp).",
-      "price_gbp_p": 1200
+      "description": "We can perform sequencing of PCR amplicons (larger than ~300 bp) and generate a consensus sequence. Please note this is not the same as sequencing a PCR library (where it is expected that there will be multiple different PCR products) and will also not work for smallPCR amplicons (smaller than ~300 bp).",
+      "price_gbp_p": 1200,
+      "addons": [],
+      "sample_storage_temperature": -20.0,
+      "max_turnaround_hours": 24,
+      "concentration_info": "50 ng/μL (higher for longer fragments)",
+      "sample_type_info": "Clonal DNA amplicon, 500 bp up to 10 kb",
+      "volume_ul": 10
     },
     {
-      "id": "P3Q5RH",
+      "id": "H8PF45",
       "name": "PCR Library Sequencing",
       "code": "PLS001",
-      "description": "This is our premium PCR service which uses a library preparation method that allows for the entire PCR sequence to be sequenced and is suitable when it is expected that the sequence is not clonal (libraries etc). It is also suitable for fragments less than 300 bp (we've gone down to 50 bp). Turnaround times are slightly longer for this service (<7 days). Please make sure your samples are all submitted at equal concentrations (400 fmol) in 20 microliters ofnuclease free water. We try to always provide 1000 reads per sample, but in cases where the sample quality is poor this may not be possible.",
-      "price_gbp_p": 3000
+      "description": "This is our premium PCR service which uses a library preparation method that allows for the entire PCR sequence to be sequenced and is suitable when it is expected that the sequence is not clonal (libraries etc). It is also suitable for fragments less than 300 bp (we've gone down to 50 bp). Turnaround times are slightly longer for this service (<7 days). Please make sure your samples are all submitted at equal concentrations (400 fmol) in 20 microliters of nuclease free water. We try to always provide 1000 reads per sample, but in cases where the sample quality is poor this may not be possible.",
+      "price_gbp_p": 3000,
+      "addons": [
+        {
+          "id": "GQ5WH4",
+          "name": "Sample Cleanup",
+          "description": "Bead-based cleanup of your samples, removing contaminants such as residual primers, enzymes or dNTPs.",
+          "order_price_gbp_p": null,
+          "sample_price_gbp_p": 500
+        },
+        {
+          "id": "CFW9VW",
+          "name": "Sample Normalisation",
+          "description": "Adjusts the concentration of samples within your order to a common level. Useful when your samples vary widely in concentration.",
+          "order_price_gbp_p": null,
+          "sample_price_gbp_p": 500
+        }
+      ],
+      "sample_storage_temperature": -20.0,
+      "max_turnaround_hours": 168,
+      "concentration_info": "20 fmol/μL",
+      "sample_type_info": "Single/multiple DNA amplicons altogether, 50 bp up to 10 kb",
+      "volume_ul": 20
     },
     {
-      "id": "2864FX",
-      "name": "Virtual Card Credit",
-      "code": "VC001",
-      "description": "Top-up your account with virtual credits and share them across multiple accounts.",
-      "price_gbp_p": 1
-    },
-    {
-      "id": "Q5R9WG",
+      "id": "P23FMV",
       "name": "Short Read 50k",
       "code": "SR50K",
       "description": "Designed as an Illumina sequencing replacement. Read lengths of around 200-250 bp. Turnarounds of less than 7 days (we're aiming for around 3!).",
-      "price_gbp_p": 6000
+      "price_gbp_p": 6000,
+      "addons": [
+        {
+          "id": "GQ5WH4",
+          "name": "Sample Cleanup",
+          "description": "Bead-based cleanup of your samples, removing contaminants such as residual primers, enzymes or dNTPs.",
+          "order_price_gbp_p": null,
+          "sample_price_gbp_p": 500
+        },
+        {
+          "id": "CFW9VW",
+          "name": "Sample Normalisation",
+          "description": "Adjusts the concentration of samples within your order to a common level. Useful when your samples vary widely in concentration.",
+          "order_price_gbp_p": null,
+          "sample_price_gbp_p": 500
+        }
+      ],
+      "sample_storage_temperature": -20.0,
+      "max_turnaround_hours": 168,
+      "concentration_info": "> 10 ng/μL",
+      "sample_type_info": "150-250 bp DNA amplicons",
+      "volume_ul": 20
+    },
+    {
+      "id": "X6R7V6",
+      "name": "Virtual Card Credit",
+      "code": "VC001",
+      "description": "Top-up your account with virtual credits and share them across multiple accounts.",
+      "price_gbp_p": 1,
+      "addons": [],
+      "sample_storage_temperature": null,
+      "max_turnaround_hours": 0,
+      "concentration_info": "",
+      "sample_type_info": "",
+      "volume_ul": 0
+    },
+    {
+      "id": "H8P845",
+      "name": "Agrobacterium Colony Sequencing",
+      "code": "AGR001",
+      "description": "",
+      "price_gbp_p": 2100,
+      "addons": [],
+      "sample_storage_temperature": 4.0,
+      "max_turnaround_hours": 48,
+      "concentration_info": "",
+      "sample_type_info": "1 large colony resuspended in LB, or overnight culture",
+      "volume_ul": 100
     }
   ],
   "next": null
@@ -90,3 +163,4 @@ A typical workflow follows these steps:
 4. `POST /orders` to place and pay for the order
 5. `GET /orders/{order_number}` to poll for status and results
 6. `GET /orders/{order_number}/fasta` to retrieve the assembled sequence for each sample
+7. `GET /orders/{order_number}/invoice` to download the invoice PDF once `invoice_number` is set
